@@ -1,0 +1,158 @@
+<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>پیام‌رسان</title>
+<style>
+:root{--bg:#efeae2;--pn:#fff;--tx:#111b21;--mu:#667781;--ac:#128c7e;--me:#d9fdd3;--ot:#fff;--bd:#e0e0e0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b141a;--pn:#202c33;--tx:#e9edef;--mu:#8696a0;--ac:#00a884;--me:#005c4b;--ot:#202c33;--bd:#2a3942}}
+:root[data-theme="dark"]{--bg:#0b141a;--pn:#202c33;--tx:#e9edef;--mu:#8696a0;--ac:#00a884;--me:#005c4b;--ot:#202c33;--bd:#2a3942}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+.hide{display:none!important}
+#boot,#setup{max-width:380px;margin:8vh auto;padding:20px;background:var(--pn);border-radius:12px;display:flex;flex-direction:column;gap:10px}
+#boot{text-align:center}
+input,textarea{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:9px 12px;width:100%}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:9px 14px;cursor:pointer}
+.btn.g{background:none;color:var(--ac)}
+.av{width:42px;height:42px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden;flex:none}
+.av img{width:100%;height:100%;object-fit:cover}
+#app{display:grid;grid-template-columns:330px 1fr;height:100%;max-width:1100px;margin:0 auto;background:var(--pn)}
+#side{border-inline-start:1px solid var(--bd);display:flex;flex-direction:column;min-height:0;order:2}
+#main{display:flex;flex-direction:column;min-height:0;order:1}
+.top{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--pn);border-bottom:1px solid var(--bd)}
+.top b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#list{overflow-y:auto;flex:1}
+.row{display:flex;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--bd)}
+.row:hover{background:var(--bg)}.row small{color:var(--mu);display:block}
+#msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--bg)}
+.m{max-width:75%;padding:6px 10px;border-radius:10px;background:var(--ot);align-self:flex-start;word-break:break-word;white-space:pre-wrap}
+.m.me{background:var(--me);align-self:flex-end}
+.m small{display:block;color:var(--mu);font-size:11px;text-align:end}
+.m img{max-width:100%;border-radius:6px;display:block}.m audio{max-width:100%}
+.m a{color:var(--ac)}
+#bar{display:flex;gap:6px;padding:8px;align-items:center;background:var(--pn);border-top:1px solid var(--bd)}
+#bar input[type=text]{flex:1}
+.ic{background:none;border:0;font-size:22px;cursor:pointer;padding:4px 6px}
+.ic.on{color:#e53935}
+#empty{margin:auto;color:var(--mu)}
+#back{display:none}
+@media(max-width:700px){#app{grid-template-columns:1fr}#side{order:1}#main{order:2}
+#app.open #side{display:none}#app:not(.open) #main{display:none}#back{display:inline-block}}
+</style></head><body>
+<div id="boot">در حال اتصال…</div>
+
+<div id="setup" class="hide">
+ <h3 style="margin:0">پروفایل</h3>
+ <div style="display:flex;align-items:center;gap:12px"><div id="pav"></div><label class="btn g" style="cursor:pointer">انتخاب عکس<input id="pf" type="file" accept="image/*" hidden></label></div>
+ <input id="sn" placeholder="اسم">
+ <input id="su" placeholder="آیدی (انگلیسی، مثلاً ali_22)" dir="ltr">
+ <textarea id="sb" rows="2" placeholder="بیو"></textarea>
+ <div id="serr" style="color:#e53935"></div>
+ <div style="display:flex;gap:8px"><button class="btn" id="ssave">ذخیره</button><button class="btn g hide" id="scancel">بستن</button></div>
+</div>
+
+<div id="app" class="hide">
+ <div id="side">
+  <div class="top"><div id="myav"></div><b id="myname"></b><button class="btn g" id="edit">ویرایش</button></div>
+  <div style="padding:8px"><input id="q" placeholder="جستجوی آیدی یا اسم…"></div>
+  <div id="list"></div>
+ </div>
+ <div id="main">
+  <div class="top"><button class="ic" id="back">→</button><div id="pvav"></div><b id="pvname"></b></div>
+  <div id="msgs"><div id="empty">یه نفر رو از لیست انتخاب کن</div></div>
+  <div id="bar" class="hide">
+   <label class="ic" title="فایل">📎<input id="fi" type="file" hidden></label>
+   <input type="text" id="tx" placeholder="پیام…">
+   <button class="ic" id="mic" title="ویس">🎤</button>
+   <button class="btn" id="send">ارسال</button>
+  </div>
+ </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
+let db,U,me,prof,people={},peer=null,col=null,unsub=null,rec=null,newAv=null,editing=false;
+const MAX=150000;
+const avatar=p=>{const d=el('div','av');if(p&&p.avatar){const i=el('img');i.src=p.avatar;d.append(i)}else d.textContent=((p&&p.name)||'?')[0];return d};
+const put=(id,p)=>{const h=$(id);h.replaceChildren(avatar(p))};
+const rd=f=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(f)});
+
+(async()=>{
+ try{db=await claude.use('db');U=await claude.use('user');me=U&&await U.id()}catch(e){}
+ if(!db||!me){$('#boot').textContent='برای استفاده باید با لینک دعوت وارد claude.ai بشی و دسترسی «مشارکت‌کننده» داشته باشی.';return}
+ db.collection('profiles').onSnapshot(s=>{people={};s.docs.forEach(d=>people[d.id]=d.data());prof=people[me];route()},e=>{$('#boot').classList.remove('hide');$('#boot').textContent='خطا: '+(e.message||e.code)});
+})();
+
+function route(){
+ $('#boot').classList.add('hide');
+ if(!prof||editing){$('#app').classList.add('hide');$('#setup').classList.remove('hide');$('#scancel').classList.toggle('hide',!prof);
+  if(prof&&!$('#sn').value){$('#sn').value=prof.name;$('#su').value=prof.user;$('#sb').value=prof.bio||''}
+  put('#pav',{name:$('#sn').value||'?',avatar:newAv||(prof&&prof.avatar)});return}
+ $('#setup').classList.add('hide');$('#app').classList.remove('hide');
+ put('#myav',prof);$('#myname').textContent=prof.name;list();
+ if(peer&&people[peer]){put('#pvav',people[peer]);$('#pvname').textContent=people[peer].name+' @'+people[peer].user}
+}
+function list(){
+ const q=$('#q').value.trim().toLowerCase(),L=$('#list');L.replaceChildren();
+ Object.entries(people).filter(([id,p])=>id!==me&&(!q||(p.user||'').includes(q)||(p.name||'').toLowerCase().includes(q))).forEach(([id,p])=>{
+  const r=el('div','row'),t=el('div');t.append(el('b',0,p.name),el('small',0,'@'+p.user+(p.bio?' · '+p.bio:'')));
+  r.append(avatar(p),t);r.onclick=()=>open(id);L.append(r)});
+ if(!L.children.length)L.append(el('div','row','کسی پیدا نشد. به دوستات بگو وارد بشن و پروفایل بسازن.'));
+}
+$('#q').oninput=list;
+$('#edit').onclick=()=>{editing=true;route()};
+$('#scancel').onclick=()=>{editing=false;newAv=null;route()};
+$('#pf').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+ const im=new Image();im.src=await rd(f);await im.decode();
+ const c=document.createElement('canvas');c.width=c.height=96;const x=c.getContext('2d'),s=Math.min(im.width,im.height);
+ x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,96,96);newAv=c.toDataURL('image/jpeg',.8);route()};
+$('#ssave').onclick=async()=>{
+ const err=m=>$('#serr').textContent=m,name=$('#sn').value.trim(),u=$('#su').value.trim().toLowerCase().replace(/[^a-z0-9_.]/g,'');
+ if(!name)return err('اسم رو بنویس');if(u.length<3)return err('آیدی حداقل ۳ حرف انگلیسی/عدد');
+ try{
+  const ref=db.doc('usernames/'+u),s=await ref.get();
+  if(s.exists&&s.data().uid!==me)return err('این آیدی قبلاً گرفته شده');
+  await ref.set({uid:me});
+  await db.doc('profiles/'+me).set({name,user:u,bio:$('#sb').value.trim(),avatar:newAv||(prof&&prof.avatar)||''});
+  editing=false;newAv=null;err('');
+ }catch(e){err('ذخیره نشد: '+(e.message||e.code))}
+};
+function open(id){
+ peer=id;$('#app').classList.add('open');$('#bar').classList.remove('hide');
+ const cid=[me,id].sort().join('_').replace(/[^\w-]/g,'');
+ col=db.collection('chats/'+cid+'/msgs');unsub&&unsub();
+ unsub=col.orderBy('t').limit(200).onSnapshot(s=>draw(s.docs.map(d=>d.data())),e=>alert('خطا: '+(e.message||e.code)));
+ route();
+}
+$('#back').onclick=()=>$('#app').classList.remove('open');
+function draw(ms){
+ const B=$('#msgs'),down=B.scrollHeight-B.scrollTop-B.clientHeight<80;B.replaceChildren();
+ ms.forEach(m=>{
+  const d=el('div','m'+(m.from===me?' me':''));
+  if(m.type==='audio'){const a=el('audio');a.controls=true;a.src=m.data;d.append(a)}
+  else if(m.type==='file'){
+   if((m.mime||'').startsWith('image/')){const i=el('img');i.src=m.data;d.append(i)}
+   const a=el('a',0,'📎 '+m.name);a.href=m.data;a.download=m.name;d.append(a)}
+  else d.append(document.createTextNode(m.text||''));
+  d.append(el('small',0,new Date(m.t).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'})));B.append(d)});
+ if(down||!ms.length||1)B.scrollTop=B.scrollHeight;
+}
+const send=m=>col&&col.add({from:me,t:Date.now(),...m}).catch(e=>alert('ارسال نشد: '+(e.message||e.code)));
+const sendText=()=>{const t=$('#tx').value.trim();if(!t)return;$('#tx').value='';send({type:'text',text:t})};
+$('#send').onclick=sendText;$('#tx').onkeydown=e=>{if(e.key==='Enter')sendText()};
+$('#fi').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+ if(f.size>MAX)return alert('حداکثر حجم فایل ۱۵۰ کیلوبایته');
+ send({type:'file',name:f.name,mime:f.type,data:await rd(f)})};
+$('#mic').onclick=async()=>{
+ if(rec){rec.stop();return}
+ try{
+  const st=await navigator.mediaDevices.getUserMedia({audio:true}),ch=[];
+  rec=new MediaRecorder(st,{audioBitsPerSecond:24000});
+  rec.ondataavailable=e=>ch.push(e.data);
+  const tm=setTimeout(()=>rec&&rec.stop(),40000);
+  rec.onstop=async()=>{clearTimeout(tm);st.getTracks().forEach(t=>t.stop());rec=null;$('#mic').classList.remove('on');
+   const d=await rd(new Blob(ch,{type:ch[0]&&ch[0].type}));
+   if(d.length>230000)return alert('ویس خیلی بلنده');send({type:'audio',data:d})};
+  rec.start();$('#mic').classList.add('on');
+ }catch(e){alert('دسترسی به میکروفون ممکن نشد')}
+};
+</script></body></html>
